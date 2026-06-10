@@ -7,6 +7,7 @@
 import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { dump as toYaml } from 'js-yaml';
+import { stringify as stableStringify } from 'safe-stable-stringify';
 import { releaseTag } from './release-tag';
 
 function arg(name: string): string {
@@ -31,40 +32,9 @@ const releaseExists = (releaseTag: string): boolean => {
   }
 };
 
-// Sort object keys recursively so two specs compare equal regardless of key order.
-const canonical = (value: unknown): unknown => {
-  if (Array.isArray(value)) return value.map(canonical);
-  if (value !== null && typeof value === 'object') {
-    const obj = value as Record<string, unknown>;
-    return Object.keys(obj)
-      .sort()
-      .reduce<Record<string, unknown>>((acc, key) => {
-        acc[key] = canonical(obj[key]);
-        return acc;
-      }, {});
-  }
-  return value;
-};
-const canonicalJson = (value: unknown): string => JSON.stringify(canonical(value));
-
 interface OpenApiSpec {
   info: { version: string };
-  paths?: Record<string, Record<string, unknown>>;
 }
-
-const HTTP_METHODS = new Set(['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace']);
-
-// Count paths and HTTP operations for the release notes, so a release is legible without opening it.
-const countSurface = (spec: OpenApiSpec): { paths: number; operations: number } => {
-  const paths = spec.paths ?? {};
-  let operations = 0;
-  for (const item of Object.values(paths)) {
-    for (const method of Object.keys(item)) {
-      if (HTTP_METHODS.has(method.toLowerCase())) operations += 1;
-    }
-  }
-  return { paths: Object.keys(paths).length, operations };
-};
 
 const specPath = arg('spec');
 const sha = arg('sha');
@@ -76,7 +46,7 @@ const tag = releaseTag({ infoVersion: incoming.info.version, isoDate, sha });
 // If the incoming spec is identical to what HEAD already serves, there is nothing to publish.
 if (fs.existsSync('openapi.json')) {
   const current = JSON.parse(fs.readFileSync('openapi.json', 'utf8')) as unknown;
-  if (canonicalJson(current) === canonicalJson(incoming)) {
+  if (stableStringify(current) === stableStringify(incoming)) {
     console.log('spec unchanged since last publish; nothing to do');
     process.exit(0);
   }
@@ -99,9 +69,8 @@ if (releaseExists(tag)) {
   console.log(`release ${tag} already exists; nothing to publish`);
   process.exit(0);
 }
-const surface = countSurface(incoming);
 const notes = [
-  `Spec version \`${incoming.info.version}\`, ${surface.paths} paths / ${surface.operations} operations.`,
+  `Spec version \`${incoming.info.version}\`.`,
   `From platform-api ${sha.slice(0, 7)} on ${isoDate.slice(0, 10)}.`,
 ].join('\n');
 run('gh', [

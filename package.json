@@ -11,7 +11,8 @@
     "publish:spec": "tsx scripts/publish.ts"
   },
   "dependencies": {
-    "js-yaml": "^4.1.0"
+    "js-yaml": "^4.1.0",
+    "safe-stable-stringify": "^2.5.0"
   },
   "devDependencies": {
     "@stoplight/spectral-cli": "^6.14.2",
