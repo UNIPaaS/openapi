@@ -37,7 +37,8 @@ Two separate concepts. `info.version` inside the spec is a curated human label. 
 - `npm install` - install the dev toolchain (tsx, typescript, spectral).
 - `npm run typecheck` - strict type-check (`tsc --noEmit`).
 - `npm test` - run the unit tests (`tsx --test`).
-- `npm run lint:spec` - lint `spec/openapi.json` against `.spectral.yaml`.
+- `npm run lint:spec -- <file>` - lint a spec against `.spectral.yaml` (errors fail; the ruleset,
+  engine, and severity are single-sourced here). E.g. `npm run lint:spec -- spec/openapi.json`.
 
 ## Conventions
 
