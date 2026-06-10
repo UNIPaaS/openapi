@@ -5,3 +5,8 @@ rules:
   operation-operationId: warn
   operation-tag-defined: warn
   info-contact: off
+  # Disabled: this rule's selector ($..[?(@.enum)]) makes nimma 0.2.3 (pinned by
+  # spectral-core, not independently upgradable) evaluate `@.enum` against every node,
+  # crashing on the spec's legitimate null example values ("Cannot read properties of
+  # null (reading 'enum')"). Fixed in newer nimma, which Spectral has not adopted.
+  duplicated-entry-in-enum: off
