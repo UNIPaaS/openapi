@@ -6,6 +6,7 @@
 // (contents:write).
 import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import { dump as toYaml } from 'js-yaml';
 import { releaseTag } from './release-tag';
 
 function arg(name: string): string {
@@ -48,7 +49,22 @@ const canonicalJson = (value: unknown): string => JSON.stringify(canonical(value
 
 interface OpenApiSpec {
   info: { version: string };
+  paths?: Record<string, Record<string, unknown>>;
 }
+
+const HTTP_METHODS = new Set(['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace']);
+
+// Count paths and HTTP operations for the release notes, so a release is legible without opening it.
+const countSurface = (spec: OpenApiSpec): { paths: number; operations: number } => {
+  const paths = spec.paths ?? {};
+  let operations = 0;
+  for (const item of Object.values(paths)) {
+    for (const method of Object.keys(item)) {
+      if (HTTP_METHODS.has(method.toLowerCase())) operations += 1;
+    }
+  }
+  return { paths: Object.keys(paths).length, operations };
+};
 
 const specPath = arg('spec');
 const sha = arg('sha');
@@ -66,8 +82,10 @@ if (fs.existsSync('openapi.json')) {
   }
 }
 
+// Write both formats: JSON for tooling, YAML for human-readable diffs and language-agnostic codegen.
 fs.copyFileSync(specPath, 'openapi.json');
-run('git', ['add', 'openapi.json']);
+fs.writeFileSync('openapi.yaml', toYaml(incoming, { lineWidth: -1, noRefs: true }));
+run('git', ['add', 'openapi.json', 'openapi.yaml']);
 const dirty = capture('git', ['status', '--porcelain']).trim();
 if (dirty) {
   run('git', ['commit', '-m', `chore: publish spec ${tag}`]);
@@ -81,16 +99,22 @@ if (releaseExists(tag)) {
   console.log(`release ${tag} already exists; nothing to publish`);
   process.exit(0);
 }
+const surface = countSurface(incoming);
+const notes = [
+  `Spec version \`${incoming.info.version}\`, ${surface.paths} paths / ${surface.operations} operations.`,
+  `From platform-api ${sha.slice(0, 7)} on ${isoDate.slice(0, 10)}.`,
+].join('\n');
 run('gh', [
   'release',
   'create',
   tag,
   'openapi.json',
+  'openapi.yaml',
   '--repo',
   'UNIPaaS/openapi',
   '--title',
   tag,
   '--notes',
-  `Published from platform-api ${sha.slice(0, 7)} on ${isoDate.slice(0, 10)}.`,
+  notes,
 ]);
 console.log(`published ${tag}`);

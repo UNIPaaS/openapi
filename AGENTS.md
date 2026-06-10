@@ -6,7 +6,8 @@ do not hand-edit `openapi.json`.
 
 ## Layout
 
-- `openapi.json` - latest published spec (HEAD = current).
+- `openapi.json` / `openapi.yaml` - latest published spec, both formats (HEAD = current); the
+  producer hands over JSON, `publish.ts` derives the YAML. Do not hand-edit either.
 - `CHANGELOG.md` - generated diff between releases.
 - `.spectral.yaml` - shared lint ruleset.
 - `scripts/publish.ts` - commits latest + cuts a release; called by platform-api CI (via `tsx`).
