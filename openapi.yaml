@@ -7167,7 +7167,7 @@ components:
         dueDate:
           format: date-time
           type: string
-          example: '2026-05-27'
+          example: '2024-01-18'
         vatAmount:
           type: number
         plans:
@@ -7305,7 +7305,7 @@ components:
         dueDate:
           format: date-time
           type: string
-          example: '2026-05-27'
+          example: '2024-01-18'
         vatAmount:
           type: number
         plans:
@@ -8279,7 +8279,7 @@ components:
         dueDate:
           format: date-time
           type: string
-          example: '2026-05-31T11:22:56.810Z'
+          example: '2024-01-22T10:00:00.000Z'
         paymentStatus:
           example: unpaid
           $ref: '#/components/schemas/paymentStatus'
