@@ -1,7 +1,9 @@
-// Usage: tsx scripts/publish.ts --spec <path> --sha <platform-api-sha> --date <iso8601>
-// Commits the new spec as latest, pushes, and cuts a GitHub Release with the provenance tag.
-// Requires: gh CLI authenticated with contents:write on this repo; run inside a clone of it.
-// (Phase 3 extends this to also generate a CHANGELOG.md entry via oasdiff.)
+// Usage: npm run publish:spec -- --spec <path> --sha <platform-api-sha> --date <iso8601>
+// The hub's publish entrypoint. Given a freshly generated spec, decide whether it differs from what
+// HEAD already serves; if so, commit it as latest, push, and cut a provenance-tagged GitHub Release.
+// Change-detection, idempotency, and the tag scheme all live here so producers stay dumb (they just
+// generate a spec and hand it over). Run inside a clone of this repo with gh authenticated
+// (contents:write).
 import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { releaseTag } from './release-tag';
@@ -18,6 +20,32 @@ const run = (cmd: string, args: string[]): void => {
 };
 const capture = (cmd: string, args: string[]): string => execFileSync(cmd, args).toString();
 
+// True if a release for this tag already exists. `gh release view` exits non-zero when it does not.
+const releaseExists = (releaseTag: string): boolean => {
+  try {
+    execFileSync('gh', ['release', 'view', releaseTag, '--repo', 'UNIPaaS/openapi'], { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+// Sort object keys recursively so two specs compare equal regardless of key order.
+const canonical = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(canonical);
+  if (value !== null && typeof value === 'object') {
+    const obj = value as Record<string, unknown>;
+    return Object.keys(obj)
+      .sort()
+      .reduce<Record<string, unknown>>((acc, key) => {
+        acc[key] = canonical(obj[key]);
+        return acc;
+      }, {});
+  }
+  return value;
+};
+const canonicalJson = (value: unknown): string => JSON.stringify(canonical(value));
+
 interface OpenApiSpec {
   info: { version: string };
 }
@@ -26,8 +54,17 @@ const specPath = arg('spec');
 const sha = arg('sha');
 const isoDate = arg('date');
 
-const spec = JSON.parse(fs.readFileSync(specPath, 'utf8')) as OpenApiSpec;
-const tag = releaseTag({ infoVersion: spec.info.version, isoDate, sha });
+const incoming = JSON.parse(fs.readFileSync(specPath, 'utf8')) as OpenApiSpec;
+const tag = releaseTag({ infoVersion: incoming.info.version, isoDate, sha });
+
+// If the incoming spec is identical to what HEAD already serves, there is nothing to publish.
+if (fs.existsSync('openapi.json')) {
+  const current = JSON.parse(fs.readFileSync('openapi.json', 'utf8')) as unknown;
+  if (canonicalJson(current) === canonicalJson(incoming)) {
+    console.log('spec unchanged since last publish; nothing to do');
+    process.exit(0);
+  }
+}
 
 fs.copyFileSync(specPath, 'openapi.json');
 run('git', ['add', 'openapi.json']);
@@ -37,6 +74,12 @@ if (dirty) {
   run('git', ['push', 'origin', 'HEAD']);
 } else {
   console.log('working tree clean; skipping commit');
+}
+// After the commit/push, so a retry that committed but failed to release still creates the release,
+// while a re-run of an already-published tag is a no-op.
+if (releaseExists(tag)) {
+  console.log(`release ${tag} already exists; nothing to publish`);
+  process.exit(0);
 }
 run('gh', [
   'release',
