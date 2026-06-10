@@ -7,7 +7,6 @@
 import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { dump as toYaml } from 'js-yaml';
-import { stringify as stableStringify } from 'safe-stable-stringify';
 import { releaseTag } from './release-tag';
 
 function arg(name: string): string {
@@ -36,6 +35,26 @@ interface OpenApiSpec {
   info: { version: string };
 }
 
+// Deterministic JSON with object keys sorted recursively (arrays keep their order), so two specs
+// compare equal regardless of incidental key ordering. The input is always parsed JSON, so there are
+// no exotic value types to handle.
+const canonicalJson = (value: unknown): string => {
+  const sortKeys = (v: unknown): unknown => {
+    if (Array.isArray(v)) return v.map(sortKeys);
+    if (v !== null && typeof v === 'object') {
+      const obj = v as Record<string, unknown>;
+      return Object.keys(obj)
+        .sort()
+        .reduce<Record<string, unknown>>((acc, key) => {
+          acc[key] = sortKeys(obj[key]);
+          return acc;
+        }, {});
+    }
+    return v;
+  };
+  return JSON.stringify(sortKeys(value));
+};
+
 const specPath = arg('spec');
 const sha = arg('sha');
 const isoDate = arg('date');
@@ -46,7 +65,7 @@ const tag = releaseTag({ infoVersion: incoming.info.version, isoDate, sha });
 // If the incoming spec is identical to what HEAD already serves, there is nothing to publish.
 if (fs.existsSync('openapi.json')) {
   const current = JSON.parse(fs.readFileSync('openapi.json', 'utf8')) as unknown;
-  if (stableStringify(current) === stableStringify(incoming)) {
+  if (canonicalJson(current) === canonicalJson(incoming)) {
     console.log('spec unchanged since last publish; nothing to do');
     process.exit(0);
   }
