@@ -7,8 +7,10 @@ here by that repo's CI.
 
 ## What is here
 
-- `openapi.json` - the latest published spec (HEAD always serves current).
-- Releases - each publish cuts a GitHub Release with the immutable `openapi.json` asset, tagged
+- `openapi.json` / `openapi.yaml` - the latest published spec in both formats (HEAD always serves
+  current). JSON for tooling, YAML for human-readable diffs and language-agnostic codegen.
+- Releases - each publish cuts a GitHub Release with the immutable `openapi.json` and `openapi.yaml`
+  assets, tagged
   `v<info.version>+<YYYYMMDD>.<shortsha>` so every spec traces back to the platform-api commit that
   built it.
 - `CHANGELOG.md` - human-readable diff between releases (generated).

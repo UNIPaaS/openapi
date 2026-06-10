@@ -6,10 +6,14 @@ do not hand-edit `openapi.json`.
 
 ## Layout
 
-- `openapi.json` - latest published spec (HEAD = current).
+- `openapi.json` / `openapi.yaml` - latest published spec, both formats (HEAD = current); the
+  producer hands over JSON, `publish.ts` derives the YAML. Do not hand-edit either.
+- `provenance.json` - the last publish's deploy `sequence`/`sha`/`tag`; the ordering guard drops
+  publishes from an older deploy than this. Generated on publish; do not hand-edit.
 - `CHANGELOG.md` - generated diff between releases.
 - `.spectral.yaml` - shared lint ruleset.
-- `scripts/publish.ts` - commits latest + cuts a release; called by platform-api CI (via `tsx`).
+- `scripts/publish.ts` - change-detect + ordering guard, commits latest + cuts a release; called by
+  platform-api CI (via `tsx`).
 - `scripts/release-tag.ts` - computes the provenance tag; pure, unit-tested.
 
 Scripts are strict TypeScript run with `tsx` (no build step); `tsc --noEmit` is the typecheck gate.
