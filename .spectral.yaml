@@ -1,0 +1,7 @@
+# .spectral.yaml - shared OpenAPI lint ruleset for the UNIPaaS spec.
+extends: ["spectral:oas"]
+rules:
+  # Tuned minimal initially so the gate adopts cleanly. Tighten as the team agrees on conventions.
+  operation-operationId: warn
+  operation-tag-defined: warn
+  info-contact: off
