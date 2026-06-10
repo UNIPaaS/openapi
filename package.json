@@ -7,7 +7,7 @@
   "scripts": {
     "test": "tsx --test scripts/*.test.ts",
     "typecheck": "tsc --noEmit",
-    "lint:spec": "spectral lint openapi.json --ruleset .spectral.yaml",
+    "lint:spec": "spectral lint spec/openapi.json --ruleset .spectral.yaml",
     "publish:spec": "tsx scripts/publish.ts"
   },
   "dependencies": {

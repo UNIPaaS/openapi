@@ -1,7 +1,7 @@
-// Usage: npm run publish:spec -- --spec <path> --sha <platform-api-sha> --date <iso8601> --sequence <int>
+// Usage: npm run publish:spec -- --spec <path> --sha <source-commit-sha> --date <iso8601> --sequence <int>
 // The hub's publish entrypoint. Producers stay dumb: they generate a spec and hand it over; ordering,
 // change-detection, idempotency, the tag scheme, and release self-heal all live here. `--sequence` is
-// a monotonic deploy key (GitLab's CI_PIPELINE_ID) so HEAD mirrors the most recent production deploy.
+// a monotonic deploy key (the producer's CI pipeline id) so HEAD mirrors the most recent production deploy.
 // Run inside a clone of this repo with gh authenticated (contents:write). Decision logic is in
 // publish-logic.ts (unit-tested); this file is the I/O around it.
 import fs from 'node:fs';
@@ -11,7 +11,9 @@ import { releaseTag } from './release-tag';
 import { classify, type OpenApiSpec, type Provenance } from './publish-logic';
 
 const REPO = 'UNIPaaS/openapi';
-const PROVENANCE_FILE = 'provenance.json';
+const SPEC_JSON = 'spec/openapi.json';
+const SPEC_YAML = 'spec/openapi.yaml';
+const PROVENANCE_FILE = 'spec/provenance.json';
 
 function arg(name: string): string {
   const i = process.argv.indexOf(`--${name}`);
@@ -37,14 +39,14 @@ const releaseExists = (tag: string): boolean => {
 
 const readJson = <T>(path: string): T => JSON.parse(fs.readFileSync(path, 'utf8')) as T;
 const notes = (version: string, sha: string, isoDate: string): string =>
-  [`Spec version \`${version}\`.`, `From platform-api ${sha.slice(0, 7)} on ${isoDate.slice(0, 10)}.`].join('\n');
+  [`Spec version \`${version}\`.`, `From source commit ${sha.slice(0, 7)} on ${isoDate.slice(0, 10)}.`].join('\n');
 // Create the release from the committed assets. Idempotent: skip if the tag is already released.
 const ensureRelease = (tag: string, body: string): void => {
   if (releaseExists(tag)) {
     console.log(`release ${tag} already exists; nothing to do`);
     return;
   }
-  run('gh', ['release', 'create', tag, 'openapi.json', 'openapi.yaml', '--repo', REPO, '--title', tag, '--notes', body]);
+  run('gh', ['release', 'create', tag, SPEC_JSON, SPEC_YAML, '--repo', REPO, '--title', tag, '--notes', body]);
   console.log(`released ${tag}`);
 };
 
@@ -57,7 +59,7 @@ if (!Number.isInteger(sequence) || sequence < 0) {
 }
 
 const incoming = readJson<OpenApiSpec>(specPath);
-const current = fs.existsSync('openapi.json') ? readJson<unknown>('openapi.json') : null;
+const current = fs.existsSync(SPEC_JSON) ? readJson<unknown>(SPEC_JSON) : null;
 const provenance = fs.existsSync(PROVENANCE_FILE) ? readJson<Provenance>(PROVENANCE_FILE) : null;
 const lastSequence = provenance ? provenance.sequence : -1;
 
@@ -71,10 +73,10 @@ if (stage === 'stale') {
 if (stage === 'changed') {
   const tag = releaseTag({ infoVersion: incoming.info.version, isoDate, sha });
   // Write both formats: JSON for tooling, YAML for human-readable diffs and language-agnostic codegen.
-  fs.copyFileSync(specPath, 'openapi.json');
-  fs.writeFileSync('openapi.yaml', toYaml(incoming, { lineWidth: -1, noRefs: true }));
+  fs.copyFileSync(specPath, SPEC_JSON);
+  fs.writeFileSync(SPEC_YAML, toYaml(incoming, { lineWidth: -1, noRefs: true }));
   fs.writeFileSync(PROVENANCE_FILE, `${JSON.stringify({ sequence, sha, timestamp: isoDate, tag } satisfies Provenance, null, 2)}\n`);
-  run('git', ['add', 'openapi.json', 'openapi.yaml', PROVENANCE_FILE]);
+  run('git', ['add', SPEC_JSON, SPEC_YAML, PROVENANCE_FILE]);
   if (capture('git', ['status', '--porcelain']).trim()) {
     run('git', ['commit', '-m', `chore: publish spec ${tag}`]);
     run('git', ['push', 'origin', 'HEAD']);
