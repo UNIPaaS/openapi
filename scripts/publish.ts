@@ -14,6 +14,8 @@ const REPO = 'UNIPaaS/openapi';
 const SPEC_JSON = 'spec/openapi.json';
 const SPEC_YAML = 'spec/openapi.yaml';
 const PROVENANCE_FILE = 'spec/provenance.json';
+const CHANGELOG_FILE = 'CHANGELOG.md';
+const CHANGELOG_HEADER = '# Changelog';
 
 function arg(name: string): string {
   const i = process.argv.indexOf(`--${name}`);
@@ -72,11 +74,31 @@ if (stage === 'stale') {
 
 if (stage === 'changed') {
   const tag = releaseTag({ infoVersion: incoming.info.version, isoDate, sha });
+  // Build a changelog entry by diffing the previous published spec (still on disk) against the
+  // incoming one, before the overwrite. Best effort: if oasdiff is unavailable or errors, fall back
+  // to a neutral note rather than fail the publish.
+  let diffBody = 'Initial published spec.';
+  if (fs.existsSync(SPEC_JSON)) {
+    try {
+      diffBody =
+        capture('oasdiff', ['changelog', SPEC_JSON, specPath, '-f', 'markdown']).trim() ||
+        'No API-surface changes detected.';
+    } catch {
+      diffBody = 'No API-surface changes detected.';
+    }
+  }
+  const entry = `## ${tag} (${isoDate.slice(0, 10)})\n\n${diffBody}\n`;
+  const existingLog = fs.existsSync(CHANGELOG_FILE) ? fs.readFileSync(CHANGELOG_FILE, 'utf8') : `${CHANGELOG_HEADER}\n`;
+  const priorEntries = existingLog.startsWith(CHANGELOG_HEADER)
+    ? existingLog.slice(CHANGELOG_HEADER.length).replace(/^\n+/, '')
+    : existingLog;
+  fs.writeFileSync(CHANGELOG_FILE, `${CHANGELOG_HEADER}\n\n${entry}\n${priorEntries}`);
+
   // Write both formats: JSON for tooling, YAML for human-readable diffs and language-agnostic codegen.
   fs.copyFileSync(specPath, SPEC_JSON);
   fs.writeFileSync(SPEC_YAML, toYaml(incoming, { lineWidth: -1, noRefs: true }));
   fs.writeFileSync(PROVENANCE_FILE, `${JSON.stringify({ sequence, sha, timestamp: isoDate, tag } satisfies Provenance, null, 2)}\n`);
-  run('git', ['add', SPEC_JSON, SPEC_YAML, PROVENANCE_FILE]);
+  run('git', ['add', SPEC_JSON, SPEC_YAML, PROVENANCE_FILE, CHANGELOG_FILE]);
   if (capture('git', ['status', '--porcelain']).trim()) {
     run('git', ['commit', '-m', `chore: publish spec ${tag}`]);
     run('git', ['push', 'origin', 'HEAD']);
@@ -84,8 +106,8 @@ if (stage === 'changed') {
     console.log('working tree clean; skipping commit');
   }
   // Ensure the release exists after the commit/push, so a retry whose commit landed but whose release
-  // failed still creates it.
-  ensureRelease(tag, notes(incoming.info.version, sha, isoDate));
+  // failed still creates it. Release notes carry the changelog diff.
+  ensureRelease(tag, `${notes(incoming.info.version, sha, isoDate)}\n\n${diffBody}`);
   process.exit(0);
 }
 
