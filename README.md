@@ -13,7 +13,6 @@ this repo automatically. Do not hand-edit it.
   assets, tagged `v<info.version>+<YYYYMMDD>.<shortsha>` so every spec traces back to the source
   commit that built it.
 - `CHANGELOG.md` - human-readable diff between releases (generated).
-- `.spectral.yaml` - the lint ruleset shared by producer and consumers.
 
 ## Consuming the spec
 

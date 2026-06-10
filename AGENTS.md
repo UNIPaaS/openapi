@@ -11,7 +11,6 @@ here automatically by the producer's CI; do not hand-edit the spec.
 - `spec/provenance.json` - the last publish's deploy `sequence`/`sha`/`tag`; the ordering guard drops
   publishes from an older deploy than this. Generated on publish; do not hand-edit.
 - `CHANGELOG.md` - generated diff between releases.
-- `.spectral.yaml` - shared lint ruleset.
 - `scripts/publish.ts` - change-detect + ordering guard, commits latest + cuts a release; invoked by
   the producer's CI as `npm run publish:spec` after a production deploy.
 - `scripts/release-tag.ts` - computes the provenance tag; pure, unit-tested.
@@ -34,11 +33,12 @@ Two separate concepts. `info.version` inside the spec is a curated human label. 
 
 ## Gates / commands
 
-- `npm install` - install the dev toolchain (tsx, typescript, spectral).
+- `npm install` - install the dev toolchain (tsx, typescript).
 - `npm run typecheck` - strict type-check (`tsc --noEmit`).
 - `npm test` - run the unit tests (`tsx --test`).
-- `npm run lint:spec -- <file>` - lint a spec against `.spectral.yaml` (errors fail; the ruleset,
-  engine, and severity are single-sourced here). E.g. `npm run lint:spec -- spec/openapi.json`.
+
+Spec linting lives with the producer (platform-api), which owns the ruleset and enforces it pre-merge;
+this repo holds only the published artifact and the publish logic.
 
 ## Conventions
 
