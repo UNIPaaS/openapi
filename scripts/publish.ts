@@ -5,6 +5,7 @@
 // Run inside a clone of this repo with GH_TOKEN set (a contents:write token) and git configured to push.
 // Decision logic is in publish-logic.ts (unit-tested); this file is the I/O around it.
 import fs from 'node:fs';
+import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { dump as toYaml } from 'js-yaml';
 import { releaseTag } from './release-tag';
@@ -119,6 +120,8 @@ async function main(): Promise<void> {
     fs.writeFileSync(CHANGELOG_FILE, `${CHANGELOG_HEADER}\n\n${entry}\n${priorEntries}`);
 
     // Write both formats: JSON for tooling, YAML for human-readable diffs and language-agnostic codegen.
+    // Ensure the spec dir exists: on the first publish into a pristine hub it may not yet.
+    fs.mkdirSync(path.dirname(SPEC_JSON), { recursive: true });
     fs.copyFileSync(specPath, SPEC_JSON);
     fs.writeFileSync(SPEC_YAML, toYaml(incoming, { lineWidth: -1, noRefs: true }));
     fs.writeFileSync(PROVENANCE_FILE, `${JSON.stringify({ sequence, sha, timestamp: isoDate, tag } satisfies Provenance, null, 2)}\n`);
