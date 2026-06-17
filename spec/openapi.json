@@ -3262,6 +3262,48 @@
             "bearer": []
           }
         ]
+      },
+      "get": {
+        "operationId": "WebSdkPayInController_getCheckout",
+        "parameters": [
+          {
+            "name": "signedLinkId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckoutPaymentLink"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "tags": [
+          "PayIn"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
       }
     },
     "/pay-ins/checkout/{signedLinkId}/expire": {
@@ -3297,50 +3339,6 @@
           },
           "405": {
             "description": "Method Not Allowed"
-          }
-        },
-        "tags": [
-          "PayIn"
-        ],
-        "security": [
-          {
-            "bearer": []
-          }
-        ]
-      }
-    },
-    "/pay-ins/checkout/{checkoutId}": {
-      "get": {
-        "operationId": "WebSdkPayInController_getCheckout",
-        "parameters": [
-          {
-            "name": "checkoutId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CheckoutPaymentLink"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "404": {
-            "description": "Not Found"
           }
         },
         "tags": [
@@ -4861,6 +4859,12 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "vendorId",
+            "required": true,
+            "in": "path",
+            "schema": {}
           }
         ],
         "responses": {
@@ -5381,7 +5385,16 @@
     "/smsa/merchant/{merchantId}": {
       "get": {
         "operationId": "SmsaController_getPlatformSmsaByDate",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "merchantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "400": {
             "description": "Bad Request"
@@ -7234,7 +7247,16 @@
     "/terminal/vendor/{vendorId}": {
       "get": {
         "operationId": "TerminalController_getVendorTerminals",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "vendorId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "400": {
             "description": "Bad Request"
@@ -10824,7 +10846,7 @@
           "dueDate": {
             "format": "date-time",
             "type": "string",
-            "example": "2024-01-18"
+            "example": "2024-01-18T00:00:00.000Z"
           },
           "vatAmount": {
             "type": "number"
@@ -11006,7 +11028,7 @@
           "dueDate": {
             "format": "date-time",
             "type": "string",
-            "example": "2024-01-18"
+            "example": "2024-01-18T00:00:00.000Z"
           },
           "vatAmount": {
             "type": "number"
@@ -12067,65 +12089,23 @@
           "body"
         ]
       },
-      "ListInvoice": {
+      "LineItem": {
         "type": "object",
         "properties": {
-          "items": {
-            "example": [
-              {
-                "id": "6391fd42a38e34b15b118d9b",
-                "vendorId": "6384b75fc661567cd8b337b5",
-                "merchantId": "6384b75fc66156798567898a",
-                "currency": "GBP",
-                "totalAmount": 99.5,
-                "reference": "INV-123456",
-                "publicUrl": "http://yourcompany.com/invoice.pdf",
-                "invoiceObject": {},
-                "lineItems": [
-                  {
-                    "description": "line 1",
-                    "unitPrice": 10.6,
-                    "quantity": 3
-                  },
-                  {
-                    "description": "line 2",
-                    "unitPrice": 19.3,
-                    "quantity": 1
-                  }
-                ],
-                "customer": {
-                  "id": "1234",
-                  "email": "test@gmail.com",
-                  "phone": "+447975777666"
-                },
-                "paymentStatus": "unpaid",
-                "isRecurring": true,
-                "subscriptionId": "12312312",
-                "dueDate": "2022-12-04T08:55:28.544Z",
-                "createdAt": "2022-12-04T08:55:28.544Z",
-                "updatedAt": "2022-12-04T08:55:28.544Z"
-              }
-            ],
-            "type": "array",
-            "items": {
-              "type": "array"
-            }
+          "description": {
+            "type": "string"
           },
-          "total": {
-            "example": [
-              {
-                "count": 1
-              }
-            ],
-            "type": "array",
-            "items": {
-              "type": "array"
-            }
+          "unitPrice": {
+            "type": "number"
+          },
+          "quantity": {
+            "type": "number"
           }
         },
         "required": [
-          "items",
-          "total"
+          "description",
+          "unitPrice",
+          "quantity"
         ]
       },
       "InvoiceConsumer": {
@@ -12242,7 +12222,7 @@
             ],
             "type": "array",
             "items": {
-              "type": "array"
+              "$ref": "#/components/schemas/LineItem"
             }
           },
           "invoiceObject": {
@@ -12300,6 +12280,67 @@
           "createdAt",
           "updatedAt",
           "external"
+        ]
+      },
+      "ListInvoice": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "example": [
+              {
+                "id": "6391fd42a38e34b15b118d9b",
+                "vendorId": "6384b75fc661567cd8b337b5",
+                "merchantId": "6384b75fc66156798567898a",
+                "currency": "GBP",
+                "totalAmount": 99.5,
+                "reference": "INV-123456",
+                "publicUrl": "http://yourcompany.com/invoice.pdf",
+                "invoiceObject": {},
+                "lineItems": [
+                  {
+                    "description": "line 1",
+                    "unitPrice": 10.6,
+                    "quantity": 3
+                  },
+                  {
+                    "description": "line 2",
+                    "unitPrice": 19.3,
+                    "quantity": 1
+                  }
+                ],
+                "customer": {
+                  "id": "1234",
+                  "email": "test@gmail.com",
+                  "phone": "+447975777666"
+                },
+                "paymentStatus": "unpaid",
+                "isRecurring": true,
+                "subscriptionId": "12312312",
+                "dueDate": "2022-12-04T08:55:28.544Z",
+                "createdAt": "2022-12-04T08:55:28.544Z",
+                "updatedAt": "2022-12-04T08:55:28.544Z"
+              }
+            ],
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Invoice"
+            }
+          },
+          "total": {
+            "example": [
+              {
+                "count": 1
+              }
+            ],
+            "type": "array",
+            "items": {
+              "type": "array"
+            }
+          }
+        },
+        "required": [
+          "items",
+          "total"
         ]
       },
       "CreateVendorInvoice": {
@@ -12360,7 +12401,7 @@
             ],
             "type": "array",
             "items": {
-              "type": "array"
+              "$ref": "#/components/schemas/LineItem"
             }
           },
           "invoiceObject": {
@@ -12391,12 +12432,20 @@
             ]
           },
           "paymentMethods": {
+            "type": "array",
             "example": [
               "directDebit"
             ],
-            "type": "array",
             "items": {
-              "type": "array"
+              "type": "string",
+              "enum": [
+                "apm",
+                "bankTransfer",
+                "creditCard",
+                "card",
+                "directDebit",
+                "taxFreeChildcare"
+              ]
             }
           },
           "external": {
@@ -12479,7 +12528,7 @@
             ],
             "type": "array",
             "items": {
-              "type": "array"
+              "$ref": "#/components/schemas/LineItem"
             }
           },
           "invoiceObject": {
@@ -12499,12 +12548,20 @@
             "example": "a90ab923-a80a-4b40-b29c-e83d94faa36c"
           },
           "paymentMethods": {
+            "type": "array",
             "example": [
               "directDebit"
             ],
-            "type": "array",
             "items": {
-              "type": "array"
+              "type": "string",
+              "enum": [
+                "apm",
+                "bankTransfer",
+                "creditCard",
+                "card",
+                "directDebit",
+                "taxFreeChildcare"
+              ]
             }
           }
         },
