@@ -100,16 +100,19 @@ async function main(): Promise<void> {
   if (stage === 'changed') {
     const tag = releaseTag({ infoVersion: incoming.info.version, isoDate, sha });
     // Build a changelog entry by diffing the previous published spec (still on disk) against the
-    // incoming one, before the overwrite. Best effort: if oasdiff is unavailable or errors, fall back
-    // to a neutral note rather than fail the publish.
+    // incoming one, before the overwrite. Best effort: a broken oasdiff must not fail the publish.
+    // Empty output and a crash are different facts, so they get different text: this branch only runs
+    // when the spec provably changed, so claiming no changes because the differ died would put a
+    // false statement into a public changelog and a release body.
     let diffBody = 'Initial published spec.';
     if (fs.existsSync(SPEC_JSON)) {
       try {
         diffBody =
           capture('oasdiff', ['changelog', SPEC_JSON, specPath, '-f', 'markdown']).trim() ||
           'No API-surface changes detected.';
-      } catch {
-        diffBody = 'No API-surface changes detected.';
+      } catch (err) {
+        console.error(`oasdiff failed, publishing without a diff: ${err instanceof Error ? err.message : err}`);
+        diffBody = 'Diff unavailable: the spec changed, but oasdiff did not run.';
       }
     }
     const entry = `## ${tag} (${isoDate.slice(0, 10)})\n\n${diffBody}\n`;
