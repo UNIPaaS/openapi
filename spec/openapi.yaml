@@ -772,6 +772,12 @@ paths:
             items:
               type: string
               format: date-time
+        - name: timezone
+          required: false
+          in: query
+          description: IANA time zone applied to CSV timestamps, e.g. Europe/London or UTC
+          schema:
+            type: string
         - name: status
           required: false
           in: query
@@ -2969,6 +2975,12 @@ paths:
             items:
               type: string
               format: date-time
+        - name: timezone
+          required: false
+          in: query
+          description: IANA time zone applied to CSV timestamps, e.g. Europe/London or UTC
+          schema:
+            type: string
         - name: status
           required: false
           in: query
@@ -3085,6 +3097,12 @@ paths:
             items:
               type: string
               format: date-time
+        - name: timezone
+          required: false
+          in: query
+          description: IANA time zone applied to CSV timestamps, e.g. Europe/London or UTC
+          schema:
+            type: string
         - name: status
           required: false
           in: query
