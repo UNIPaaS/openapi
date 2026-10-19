@@ -7582,7 +7582,8 @@
               "CHARITABLE_AND_SOCIAL_SERVICE_ORGANIZATIONS",
               "STUDIOS_AND_REHEARSAL_ROOMS",
               "CREATIVE_SPACES",
-              "ELEMENTARY_OR_SECONDARY_SCHOOLS"
+              "ELEMENTARY_OR_SECONDARY_SCHOOLS",
+              "ANTIQUE_SHOPS_SALES_OF_USED_GOODS_ANTIQUES_AND_COLLECTIBLES"
             ],
             "example": "DIGITAL_GOODS"
           },
@@ -7687,7 +7688,8 @@
               "CHARITABLE_AND_SOCIAL_SERVICE_ORGANIZATIONS",
               "STUDIOS_AND_REHEARSAL_ROOMS",
               "CREATIVE_SPACES",
-              "ELEMENTARY_OR_SECONDARY_SCHOOLS"
+              "ELEMENTARY_OR_SECONDARY_SCHOOLS",
+              "ANTIQUE_SHOPS_SALES_OF_USED_GOODS_ANTIQUES_AND_COLLECTIBLES"
             ],
             "example": "DIGITAL_GOODS"
           },
@@ -8321,6 +8323,7 @@
           "Void",
           "Refund",
           "Auth3D_Challange",
+          "Init",
           "Init3D",
           "Funding",
           "Payout",
@@ -10778,6 +10781,49 @@
           "postalCode"
         ]
       },
+      "ChildcareChild": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string",
+            "example": "ABCD12345TFC",
+            "description": "HMRC Tax-Free Childcare child payment reference: 12 characters, ending with TFC. Send it exactly as shown in the parent's Tax-Free Childcare account."
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "example": "2018-06-15",
+            "format": "date",
+            "description": "Child date of birth in YYYY-MM-DD format. Must not be a future date or before 1900."
+          },
+          "amount": {
+            "type": "number",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "example": 25,
+            "multipleOf": 0.01
+          }
+        },
+        "required": [
+          "reference",
+          "dateOfBirth",
+          "amount"
+        ]
+      },
+      "ChildcarePayments": {
+        "type": "object",
+        "properties": {
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChildcareChild"
+            }
+          },
+          "urn": {
+            "type": "string",
+            "description": "Childcare provider URN for TFC payments"
+          }
+        }
+      },
       "CreateCheckoutBody": {
         "type": "object",
         "properties": {
@@ -10932,6 +10978,9 @@
           },
           "storePaymentMethod": {
             "type": "boolean"
+          },
+          "childcarePayments": {
+            "$ref": "#/components/schemas/ChildcarePayments"
           }
         },
         "required": [
@@ -11114,6 +11163,9 @@
           },
           "storePaymentMethod": {
             "type": "boolean"
+          },
+          "childcarePayments": {
+            "$ref": "#/components/schemas/ChildcarePayments"
           },
           "_id": {
             "type": "string"
@@ -12656,6 +12708,13 @@
           }
         }
       },
+      "PaymentRail": {
+        "type": "string",
+        "enum": [
+          "bacs",
+          "sepa"
+        ]
+      },
       "IRequestMandateEmail": {
         "type": "object",
         "properties": {}
@@ -12682,6 +12741,10 @@
           "sendEmail": {
             "type": "boolean",
             "example": true
+          },
+          "rail": {
+            "example": "sepa",
+            "$ref": "#/components/schemas/PaymentRail"
           },
           "requestMandateEmailObject": {
             "example": {
