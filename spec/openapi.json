@@ -10733,6 +10733,28 @@
           "amount"
         ]
       },
+      "Discount": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "number",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "example": 10,
+            "multipleOf": 0.01,
+            "description": "Basket-level discount already deducted by the platform: amount = sum of items amounts - discount.amount"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 256,
+            "example": "Promo code SUMMER10",
+            "default": "Discount"
+          }
+        },
+        "required": [
+          "amount"
+        ]
+      },
       "Address": {
         "type": "object",
         "properties": {
@@ -10924,6 +10946,14 @@
           "vatAmount": {
             "type": "number"
           },
+          "discount": {
+            "description": "ISV platforms only; not allowed with plans, childcarePayments, storePaymentMethod or items that carry vendorId/fundingAmount",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Discount"
+              }
+            ]
+          },
           "plans": {
             "type": "array",
             "items": {
@@ -11109,6 +11139,14 @@
           "vatAmount": {
             "type": "number"
           },
+          "discount": {
+            "description": "ISV platforms only; not allowed with plans, childcarePayments, storePaymentMethod or items that carry vendorId/fundingAmount",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Discount"
+              }
+            ]
+          },
           "plans": {
             "type": "array",
             "items": {
@@ -11291,6 +11329,9 @@
             "items": {
               "$ref": "#/components/schemas/Item"
             }
+          },
+          "discount": {
+            "$ref": "#/components/schemas/Discount"
           },
           "reference": {
             "type": "string",

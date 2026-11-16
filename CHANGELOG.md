@@ -1,5 +1,34 @@
 # Changelog
 
+## v1.12+20261116.6db41d0 (2026-11-16)
+
+# API Changelog 1.12 vs. 1.12
+
+
+## API Changes
+
+### POST /pay-ins/checkout
+-  added the new optional request property `discount`
+-  added the optional property `discount` to the response with the `201` status
+
+
+### GET /pay-ins/checkout/{signedLinkId}
+-  added the optional property `discount` to the response with the `201` status
+
+
+### PATCH /pay-ins/checkout/{signedLinkId}
+-  added the new optional request property `discount`
+-  added the optional property `discount` to the response with the `201` status
+
+
+### POST /pay-ins/checkout/{signedLinkId}/expire
+-  added the optional property `discount` to the response with the `201` status
+
+
+### POST /pay-ins/{authorizationId}/reschedule
+-  added the new optional request property `discount`
+-  added the optional property `discount` to the response with the `201` status
+
 ## v1.12+20261019.d653a5c (2026-10-19)
 
 # API Changelog 1.12 vs. 1.12
